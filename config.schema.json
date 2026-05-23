@@ -1,0 +1,300 @@
+{
+  "pluginAlias": "SecurlanCWebForce",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string",
+        "default": "Securlan"
+      },
+      "baseUrl": {
+        "title": "CWebForce base URL",
+        "type": "string",
+        "default": "https://www.cwebforce.it/ev"
+      },
+      "alarmBaseUrl": {
+        "title": "CWebForce alarm base URL",
+        "type": "string",
+        "default": "https://www.cwebforce.it/ev"
+      },
+      "username": {
+        "title": "Username",
+        "type": "string",
+        "required": true
+      },
+      "password": {
+        "title": "Password",
+        "type": "string",
+        "required": true
+      },
+      "pollIntervalSeconds": {
+        "title": "Polling interval",
+        "type": "integer",
+        "default": 60,
+        "minimum": 15
+      },
+      "requestTimeoutMs": {
+        "title": "Request timeout",
+        "type": "integer",
+        "default": 45000,
+        "minimum": 5000
+      },
+      "sector": {
+        "title": "Sector",
+        "type": "string",
+        "default": "TUTTI"
+      },
+      "discoverOutputs": {
+        "title": "Discover outputs automatically",
+        "type": "boolean",
+        "default": true
+      },
+      "removeMissingOutputs": {
+        "title": "Remove missing outputs",
+        "type": "boolean",
+        "default": false
+      },
+      "defaultOutputMode": {
+        "title": "Default output type",
+        "type": "string",
+        "default": "button",
+        "oneOf": [
+          { "title": "Button", "enum": ["button"] },
+          { "title": "Switch", "enum": ["switch"] },
+          { "title": "Garage Door", "enum": ["garageDoor"] },
+          { "title": "Window Covering", "enum": ["windowCovering"] },
+          { "title": "Lock", "enum": ["lock"] }
+        ]
+      },
+      "outputs": {
+        "title": "Output overrides",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "title": "Discovered name to match",
+              "type": "string"
+            },
+            "displayName": {
+              "title": "HomeKit name",
+              "type": "string"
+            },
+            "id": {
+              "title": "Exact CWebForce output id",
+              "type": "string"
+            },
+            "idIndex": {
+              "title": "Output index from the CWebForce page",
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            },
+            "pulseSeconds": {
+              "title": "Reset switch after seconds",
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "exposeAs": {
+              "title": "Expose as",
+              "type": "string",
+              "default": "button",
+              "oneOf": [
+                { "title": "Button", "enum": ["button"] },
+                { "title": "Switch", "enum": ["switch"] },
+                { "title": "Garage Door", "enum": ["garageDoor"] },
+                { "title": "Window Covering", "enum": ["windowCovering"] },
+                { "title": "Lock", "enum": ["lock"] }
+              ]
+            },
+            "enabled": {
+              "title": "Enabled",
+              "type": "boolean",
+              "default": true
+            },
+            "linkedSensorName": {
+              "title": "Linked sensor name",
+              "type": "string"
+            },
+            "linkedSensorId": {
+              "title": "Linked sensor id",
+              "type": "string"
+            },
+            "sensorOpenState": {
+              "title": "Sensor state that means open",
+              "type": "string",
+              "default": "APERTO"
+            },
+            "sensorClosedState": {
+              "title": "Sensor state that means closed",
+              "type": "string",
+              "default": "PRONTO"
+            }
+          }
+        }
+      },
+      "sensors": {
+        "title": "Sensors",
+        "type": "object",
+        "properties": {
+          "removeMissing": {
+            "title": "Remove missing sensors",
+            "type": "boolean",
+            "default": false
+          },
+          "overrides": {
+            "title": "Sensor overrides",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "title": "CWebForce sensor name",
+                  "type": "string"
+                },
+                "displayName": {
+                  "title": "HomeKit name",
+                  "type": "string"
+                },
+                "kind": {
+                  "title": "Type",
+                  "type": "string",
+                  "default": "auto",
+                  "oneOf": [
+                    { "title": "Auto", "enum": ["auto"] },
+                    { "title": "Contact", "enum": ["contact"] },
+                    { "title": "Motion", "enum": ["motion"] },
+                    { "title": "Occupancy", "enum": ["occupancy"] }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "alarm": {
+        "title": "Alarm",
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "title": "Expose alarm",
+            "type": "boolean",
+            "default": false
+          },
+          "exposeAs": {
+            "title": "Expose as",
+            "type": "string",
+            "default": "system",
+            "oneOf": [
+              { "title": "Single alarm", "enum": ["system"] },
+              { "title": "Separate sectors", "enum": ["sectors"] }
+            ]
+          },
+          "name": {
+            "title": "HomeKit alarm name",
+            "type": "string",
+            "default": "Securlan Alarm"
+          },
+          "allowControl": {
+            "title": "Allow HomeKit to arm/disarm alarm sectors",
+            "type": "boolean",
+            "default": false
+          },
+          "modes": {
+            "title": "Single alarm mode sectors",
+            "type": "object",
+            "properties": {
+              "away": {
+                "title": "Away sector ids",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "home": {
+                "title": "Home sector ids",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "night": {
+                "title": "Night sector ids",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "removeMissing": {
+            "title": "Remove missing alarm sectors",
+            "type": "boolean",
+            "default": false
+          },
+          "sectors": {
+            "title": "Alarm sector overrides",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "title": "Sector id",
+                  "type": "string"
+                },
+                "name": {
+                  "title": "Discovered sector name",
+                  "type": "string"
+                },
+                "displayName": {
+                  "title": "HomeKit name",
+                  "type": "string"
+                },
+                "enabled": {
+                  "title": "Enabled",
+                  "type": "boolean",
+                  "default": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "matter": {
+        "title": "Matter",
+        "type": "object",
+        "properties": {
+          "exposeOutputs": {
+            "title": "Expose configured outputs through Homebridge v2 Matter API",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    }
+  },
+  "layout": [
+    "name",
+    "baseUrl",
+    "alarmBaseUrl",
+    "username",
+    {
+      "key": "password",
+      "type": "password"
+    },
+    "pollIntervalSeconds",
+    "requestTimeoutMs",
+    "sector",
+    "discoverOutputs",
+    "removeMissingOutputs",
+    "defaultOutputMode",
+    "outputs",
+    "sensors",
+    "alarm",
+    "matter"
+  ]
+}

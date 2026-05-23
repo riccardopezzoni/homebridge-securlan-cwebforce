@@ -1,0 +1,52 @@
+{
+  "name": "homebridge-securlan-cwebforce",
+  "displayName": "Homebridge Securlan CWebForce",
+  "version": "1.0.0",
+  "description": "Homebridge dynamic platform for Securlan/CWebForce alarm zones and outputs.",
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge",
+    "securlan",
+    "cwebforce",
+    "alarm",
+    "matter"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=20",
+    "homebridge": ">=1.8.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "prepack": "npm run build",
+    "securlan:alarm": "node dist/cli.js alarm",
+    "securlan:alarm:dev": "npm run build --silent && node dist/cli.js alarm",
+    "securlan:list": "node dist/cli.js list",
+    "securlan:list:dev": "npm run build --silent && node dist/cli.js list"
+  },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md"
+  ],
+  "dependencies": {
+    "cheerio": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "homebridge": "^2.0.1",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/riccardopezzoni/homebridge-securlan-cwebforce.git"
+  },
+  "bugs": {
+    "url": "https://github.com/riccardopezzoni/homebridge-securlan-cwebforce/issues"
+  },
+  "homepage": "https://github.com/riccardopezzoni/homebridge-securlan-cwebforce#readme",
+  "license": "MIT"
+}
