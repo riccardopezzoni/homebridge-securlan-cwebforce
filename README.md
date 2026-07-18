@@ -112,16 +112,16 @@ With only this config, the plugin discovers zones and outputs automatically. Out
   "pollIntervalSeconds": 30,
   "outputs": [
     {
-      "name": "APRI PEDONALE",
+      "code": "UU_003",
       "displayName": "Pedonale",
       "exposeAs": "lock",
       "pulseSeconds": 3
     },
     {
-      "name": "Garage",
+      "code": "UU_004",
       "displayName": "Garage",
       "exposeAs": "garageDoor",
-      "linkedSensorName": "PORTA GARAGE"
+      "linkedSensorCode": "ZF_024"
     }
   ],
   "alarm": {
@@ -143,6 +143,7 @@ The `outputs` array is not the full list of outputs. It is only a list of overri
 
 Overrides can match a discovered output by:
 
+- `code`: stable CWebForce output code, such as `UU_003`.
 - `name`: discovered output name.
 - `idIndex`: stable position on the CWebForce outputs page.
 - `id`: exact CWebForce output id, if it is stable for your installation.
@@ -151,9 +152,9 @@ Supported `exposeAs` values:
 
 - `button`: momentary HomeKit switch that turns itself off after the pulse.
 - `switch`: same HomeKit service as `button`, useful if you prefer switch wording in config.
-- `garageDoor`: HomeKit garage door opener, best used with `linkedSensorName`.
+- `garageDoor`: HomeKit garage door opener, best used with `linkedSensorCode` or `linkedSensorName`.
 - `lock`: HomeKit lock mechanism, useful for pedestrian gates, doors, or electric strikes.
-- `windowCovering`: binary open/closed HomeKit window covering, best used with `linkedSensorName`.
+- `windowCovering`: binary open/closed HomeKit window covering, best used with `linkedSensorCode` or `linkedSensorName`.
 
 ## Lock Outputs
 
@@ -163,7 +164,7 @@ Use `exposeAs: "lock"` for an output that unlocks a pedestrian gate or electric 
 {
   "outputs": [
     {
-      "name": "APRI PEDONALE",
+      "code": "UU_003",
       "displayName": "Pedonale",
       "exposeAs": "lock",
       "pulseSeconds": 3
@@ -178,10 +179,10 @@ With a linked contact sensor, the lock state follows the sensor:
 
 ```json
 {
-  "name": "APRI PEDONALE",
+  "code": "UU_003",
   "displayName": "Pedonale",
   "exposeAs": "lock",
-  "linkedSensorName": "PEDONALE"
+  "linkedSensorCode": "ZF_001"
 }
 ```
 
@@ -193,10 +194,10 @@ Use `exposeAs: "garageDoor"` for a gate or garage output. Link it to a contact s
 {
   "outputs": [
     {
-      "name": "Garage",
+      "code": "UU_004",
       "displayName": "Garage",
       "exposeAs": "garageDoor",
-      "linkedSensorName": "PORTA GARAGE"
+      "linkedSensorCode": "ZF_024"
     }
   ]
 }
@@ -204,7 +205,9 @@ Use `exposeAs: "garageDoor"` for a gate or garage output. Link it to a contact s
 
 ## Linked Sensors
 
-Some HomeKit services need state feedback. For example, a garage door should know whether it is open or closed. Link an output to a discovered zone with `linkedSensorName` or `linkedSensorId`.
+Some HomeKit services need state feedback. For example, a garage door should know whether it is open or closed. Link an output to a discovered zone with `linkedSensorCode`, `linkedSensorName`, or `linkedSensorId`.
+
+Use `linkedSensorCode` when CWebForce exposes generic names such as `Zona Filo 1`. The diagnostic command prints stable sensor codes like `ZF_001`.
 
 Default contact-state mapping:
 
@@ -220,10 +223,10 @@ If your installation uses inverted or different state labels, set them on the ou
 
 ```json
 {
-  "name": "Garage",
+  "code": "UU_004",
   "displayName": "Garage",
   "exposeAs": "garageDoor",
-  "linkedSensorName": "PORTA GARAGE",
+  "linkedSensorCode": "ZF_024",
   "sensorOpenState": "APERTO",
   "sensorClosedState": "PRONTO"
 }
@@ -238,12 +241,12 @@ The plugin guesses sensor type from the zone name. You can override any zone:
   "sensors": {
     "overrides": [
       {
-        "name": "PORTA INGRESSO",
+        "code": "ZF_001",
         "displayName": "Porta Ingresso",
         "kind": "contact"
       },
       {
-        "name": "SENSORE SALA",
+        "code": "ZF_020",
         "displayName": "Movimento Sala",
         "kind": "motion"
       }

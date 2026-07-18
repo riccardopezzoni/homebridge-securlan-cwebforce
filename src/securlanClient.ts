@@ -127,9 +127,16 @@ export class SecurlanClient {
 
   private async resolveOutputId(output: SecurlanOutputConfig, forceRefresh = false): Promise<string> {
     const outputs = await this.getOutputs(forceRefresh);
+    const byCode = output.code
+      ? outputs.find(item => normalizeCode(item.code) === normalizeCode(output.code))
+      : undefined;
     const byName = output.name
       ? outputs.find(item => normalizeName(item.name) === normalizeName(output.name ?? ''))
       : undefined;
+
+    if (byCode) {
+      return byCode.id;
+    }
 
     if (byName) {
       return byName.id;
@@ -242,15 +249,16 @@ export class SecurlanClient {
 
 export function parseSensors(html: string): SecurlanSensorState[] {
   const sensors: SecurlanSensorState[] = [];
-  const pattern = /<b>[^<]+<\/b><br>([^<]+)<br>Stato:\s*([^<.]+)\./g;
+  const pattern = /<b>([^<]+)<\/b><br>([^<]+)<br>Stato:\s*([^<.]+)\./g;
 
   for (const match of html.matchAll(pattern)) {
-    const $ = cheerio.load(match[1]);
+    const code = parseDeviceCode(match[1]);
+    const $ = cheerio.load(match[2]);
     const name = $.root().text().split(' - ')[0].trim();
-    const rawState = match[2].trim().toUpperCase();
+    const rawState = match[3].trim().toUpperCase();
 
     if (name && rawState) {
-      sensors.push({ name, rawState });
+      sensors.push({ code, name, rawState });
     }
   }
 
@@ -271,7 +279,8 @@ export function parseOutputs(html: string): SecurlanOutputState[] {
     seenIds.add(id);
     const idIndex = outputs.length;
     const name = findOutputName($, $(element), id, idIndex);
-    outputs.push({ id, idIndex, name });
+    const code = findOutputCode($, $(element), id);
+    outputs.push({ id, idIndex, code, name });
   });
 
   if (outputs.length > 0) {
@@ -281,6 +290,7 @@ export function parseOutputs(html: string): SecurlanOutputState[] {
   return [...html.matchAll(/id="(\d{2}-\d{4}-\d-\d{4})"/g)].map((match, index) => ({
     id: match[1],
     idIndex: index,
+    code: undefined,
     name: `Uscita ${index + 1}`,
   }));
 }
@@ -391,6 +401,35 @@ function findOutputName(
   return `Uscita ${index + 1}`;
 }
 
+function findOutputCode(
+  $: cheerio.CheerioAPI,
+  element: cheerio.Cheerio<AnyNode>,
+  id: string,
+): string | undefined {
+  const candidates = [
+    $(`label[for="${escapeSelector(id)}"]`).first().text(),
+    element.attr('value') ?? '',
+    element.attr('name') ?? '',
+  ];
+
+  for (const selector of ['tr', 'li', 'p', 'div', 'form']) {
+    candidates.push(element.closest(selector).text());
+  }
+
+  for (const candidate of candidates) {
+    const code = parseDeviceCode(candidate);
+    if (code?.startsWith('UU_')) {
+      return code;
+    }
+  }
+
+  return undefined;
+}
+
+function parseDeviceCode(value: string): string | undefined {
+  return value.match(/\b[A-Z]{2,4}_\d{3,4}\b/i)?.[0].toUpperCase();
+}
+
 function cleanOutputText(value: string, idToRemove?: string): string {
   let text = value
     .replace(/\s+/g, ' ')
@@ -416,6 +455,10 @@ function normalizeName(value: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
+}
+
+function normalizeCode(value: string | undefined): string {
+  return (value ?? '').trim().toUpperCase();
 }
 
 function normalizeDesiredAlarmStates(desiredStates: Record<string, boolean>): Map<string, boolean> {

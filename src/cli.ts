@@ -48,13 +48,13 @@ async function main(): Promise<void> {
 
   console.log(`Sensori trovati (${sensors.length}):`);
   for (const sensor of sensors) {
-    console.log(`- ${sensor.name}: ${sensor.rawState}`);
+    console.log(`- ${sensor.code ? `${sensor.code} ` : ''}${sensor.name}: ${sensor.rawState}`);
   }
 
   console.log('');
   console.log(`Uscite trovate (${outputs.length}):`);
   outputs.forEach(output => {
-    console.log(`- idIndex ${output.idIndex}: ${output.id} (${output.name})`);
+    console.log(`- idIndex ${output.idIndex}: ${output.id}${output.code ? ` ${output.code}` : ''} (${output.name})`);
   });
 }
 

@@ -13,6 +13,7 @@ class SecurlanPlatform {
     cachedMatterAccessories = new Map();
     sensorStatesById = new Map();
     sensorStatesByName = new Map();
+    sensorStatesByCode = new Map();
     lockResetTimers = new Map();
     client;
     pollIntervalSeconds;
@@ -79,11 +80,15 @@ class SecurlanPlatform {
         try {
             const sensors = await this.client.getSensors(this.config.sector ?? 'TUTTI');
             const seenIds = new Set();
+            this.sensorStatesByCode.clear();
             for (const sensor of sensors) {
                 const accessory = this.getOrCreateSensorAccessory(sensor);
                 seenIds.add(accessory.context.id);
                 this.sensorStatesById.set(accessory.context.id, sensor);
                 this.sensorStatesByName.set(sensor.name, sensor);
+                if (sensor.code) {
+                    this.sensorStatesByCode.set(normalizeCode(sensor.code), sensor);
+                }
                 this.updateSensorAccessory(accessory, sensor);
             }
             this.updateLinkedOutputAccessories();
@@ -204,6 +209,7 @@ class SecurlanPlatform {
                     outputMode: resolveOutputMode(output, this.config.defaultOutputMode),
                     linkedSensorId: output.linkedSensorId,
                     linkedSensorName: output.linkedSensorName,
+                    linkedSensorCode: output.linkedSensorCode,
                 };
                 this.configureHapAccessory(accessory);
                 this.api.registerPlatformAccessories(settings_1.PLUGIN_NAME, settings_1.PLATFORM_NAME, [accessory]);
@@ -216,6 +222,7 @@ class SecurlanPlatform {
                 accessory.context.outputMode = resolveOutputMode(output, this.config.defaultOutputMode);
                 accessory.context.linkedSensorId = output.linkedSensorId;
                 accessory.context.linkedSensorName = output.linkedSensorName;
+                accessory.context.linkedSensorCode = output.linkedSensorCode;
                 this.configureHapAccessory(accessory);
             }
         }
@@ -225,7 +232,7 @@ class SecurlanPlatform {
         await this.registerMatterOutputs();
     }
     getOrCreateSensorAccessory(sensor) {
-        const override = this.config.sensors?.overrides?.find(item => item.name === sensor.name);
+        const override = findSensorOverride(sensor, this.config.sensors?.overrides ?? []);
         const sensorKind = resolveSensorKind(sensor.name, override?.kind);
         const displayName = override?.displayName ?? sensor.name;
         const id = `sensor:${normalizeId(sensor.name)}`;
@@ -704,6 +711,7 @@ class SecurlanPlatform {
             return {
                 id: discovered.id,
                 idIndex: discovered.idIndex,
+                code: discovered.code,
                 name: discovered.name,
                 ...override,
                 displayName: override?.displayName ?? override?.name ?? discovered.name,
@@ -757,11 +765,18 @@ class SecurlanPlatform {
     findLinkedSensor(accessory) {
         const linkedSensorId = accessory.context.linkedSensorId;
         const linkedSensorName = accessory.context.linkedSensorName;
+        const linkedSensorCode = accessory.context.linkedSensorCode;
         if (linkedSensorId) {
             const normalizedId = linkedSensorId.startsWith('sensor:')
                 ? linkedSensorId
                 : `sensor:${normalizeId(linkedSensorId)}`;
             const sensor = this.sensorStatesById.get(normalizedId);
+            if (sensor) {
+                return sensor;
+            }
+        }
+        if (linkedSensorCode) {
+            const sensor = this.sensorStatesByCode.get(normalizeCode(linkedSensorCode));
             if (sensor) {
                 return sensor;
             }
@@ -867,8 +882,22 @@ function resolveOutputMode(output, defaultMode) {
 function findOutputOverride(discovered, overrides) {
     return overrides.find(override => outputOverrideMatches(discovered, override));
 }
+function findSensorOverride(discovered, overrides) {
+    return overrides.find(override => {
+        if (override.code && normalizeCode(override.code) === normalizeCode(discovered.code)) {
+            return true;
+        }
+        if (override.name && normalizeComparable(override.name) === normalizeComparable(discovered.name)) {
+            return true;
+        }
+        return false;
+    });
+}
 function outputOverrideMatches(discovered, override) {
     if (override.id && discovered.id === override.id) {
+        return true;
+    }
+    if (override.code && normalizeCode(discovered.code) === normalizeCode(override.code)) {
         return true;
     }
     if (override.idIndex !== undefined && discovered.idIndex === override.idIndex) {
@@ -946,6 +975,9 @@ function normalizeId(value) {
 }
 function normalizeComparable(value) {
     return normalizeId(value).replaceAll('-', ' ');
+}
+function normalizeCode(value) {
+    return (value ?? '').trim().toUpperCase();
 }
 function errorMessage(error) {
     return error instanceof Error ? error.message : String(error);

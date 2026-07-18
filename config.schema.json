@@ -79,6 +79,10 @@
               "title": "Discovered name to match",
               "type": "string"
             },
+            "code": {
+              "title": "Discovered output code to match",
+              "type": "string"
+            },
             "displayName": {
               "title": "HomeKit name",
               "type": "string"
@@ -120,6 +124,10 @@
               "title": "Linked sensor name",
               "type": "string"
             },
+            "linkedSensorCode": {
+              "title": "Linked sensor code",
+              "type": "string"
+            },
             "linkedSensorId": {
               "title": "Linked sensor id",
               "type": "string"
@@ -154,6 +162,10 @@
               "properties": {
                 "name": {
                   "title": "CWebForce sensor name",
+                  "type": "string"
+                },
+                "code": {
+                  "title": "CWebForce sensor code",
                   "type": "string"
                 },
                 "displayName": {

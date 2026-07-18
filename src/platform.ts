@@ -25,6 +25,7 @@ import type {
   SecurlanOutputState,
   SecurlanPlatformConfig,
   SecurlanSensorState,
+  SensorOverrideConfig,
   SensorKind,
 } from './types';
 
@@ -35,6 +36,7 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
   private readonly cachedMatterAccessories = new Map<string, Record<string, unknown>>();
   private readonly sensorStatesById = new Map<string, SecurlanSensorState>();
   private readonly sensorStatesByName = new Map<string, SecurlanSensorState>();
+  private readonly sensorStatesByCode = new Map<string, SecurlanSensorState>();
   private readonly lockResetTimers = new Map<string, NodeJS.Timeout>();
   private readonly client?: SecurlanClient;
   private readonly pollIntervalSeconds: number;
@@ -114,11 +116,16 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
       const sensors = await this.client.getSensors(this.config.sector ?? 'TUTTI');
       const seenIds = new Set<string>();
 
+      this.sensorStatesByCode.clear();
+
       for (const sensor of sensors) {
         const accessory = this.getOrCreateSensorAccessory(sensor);
         seenIds.add(accessory.context.id);
         this.sensorStatesById.set(accessory.context.id, sensor);
         this.sensorStatesByName.set(sensor.name, sensor);
+        if (sensor.code) {
+          this.sensorStatesByCode.set(normalizeCode(sensor.code), sensor);
+        }
         this.updateSensorAccessory(accessory, sensor);
       }
 
@@ -263,6 +270,7 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
           outputMode: resolveOutputMode(output, this.config.defaultOutputMode),
           linkedSensorId: output.linkedSensorId,
           linkedSensorName: output.linkedSensorName,
+          linkedSensorCode: output.linkedSensorCode,
         };
         this.configureHapAccessory(accessory);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
@@ -274,6 +282,7 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
         accessory.context.outputMode = resolveOutputMode(output, this.config.defaultOutputMode);
         accessory.context.linkedSensorId = output.linkedSensorId;
         accessory.context.linkedSensorName = output.linkedSensorName;
+        accessory.context.linkedSensorCode = output.linkedSensorCode;
         this.configureHapAccessory(accessory);
       }
     }
@@ -286,7 +295,7 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
   }
 
   private getOrCreateSensorAccessory(sensor: SecurlanSensorState): PlatformAccessory<AccessoryContext> {
-    const override = this.config.sensors?.overrides?.find(item => item.name === sensor.name);
+    const override = findSensorOverride(sensor, this.config.sensors?.overrides ?? []);
     const sensorKind = resolveSensorKind(sensor.name, override?.kind);
     const displayName = override?.displayName ?? sensor.name;
     const id = `sensor:${normalizeId(sensor.name)}`;
@@ -883,6 +892,7 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
       return {
         id: discovered.id,
         idIndex: discovered.idIndex,
+        code: discovered.code,
         name: discovered.name,
         ...override,
         displayName: override?.displayName ?? override?.name ?? discovered.name,
@@ -951,12 +961,20 @@ export class SecurlanPlatform implements DynamicPlatformPlugin {
   private findLinkedSensor(accessory: PlatformAccessory<AccessoryContext>): SecurlanSensorState | undefined {
     const linkedSensorId = accessory.context.linkedSensorId;
     const linkedSensorName = accessory.context.linkedSensorName;
+    const linkedSensorCode = accessory.context.linkedSensorCode;
 
     if (linkedSensorId) {
       const normalizedId = linkedSensorId.startsWith('sensor:')
         ? linkedSensorId
         : `sensor:${normalizeId(linkedSensorId)}`;
       const sensor = this.sensorStatesById.get(normalizedId);
+      if (sensor) {
+        return sensor;
+      }
+    }
+
+    if (linkedSensorCode) {
+      const sensor = this.sensorStatesByCode.get(normalizeCode(linkedSensorCode));
       if (sensor) {
         return sensor;
       }
@@ -1094,11 +1112,32 @@ function findOutputOverride(
   return overrides.find(override => outputOverrideMatches(discovered, override));
 }
 
+function findSensorOverride(
+  discovered: SecurlanSensorState,
+  overrides: SensorOverrideConfig[],
+): SensorOverrideConfig | undefined {
+  return overrides.find(override => {
+    if (override.code && normalizeCode(override.code) === normalizeCode(discovered.code)) {
+      return true;
+    }
+
+    if (override.name && normalizeComparable(override.name) === normalizeComparable(discovered.name)) {
+      return true;
+    }
+
+    return false;
+  });
+}
+
 function outputOverrideMatches(
-  discovered: Pick<SecurlanOutputState, 'id' | 'idIndex' | 'name'> | SecurlanOutputConfig,
+  discovered: Pick<SecurlanOutputState, 'id' | 'idIndex' | 'name' | 'code'> | SecurlanOutputConfig,
   override: SecurlanOutputConfig,
 ): boolean {
   if (override.id && discovered.id === override.id) {
+    return true;
+  }
+
+  if (override.code && normalizeCode(discovered.code) === normalizeCode(override.code)) {
     return true;
   }
 
@@ -1204,6 +1243,10 @@ function normalizeId(value: string): string {
 
 function normalizeComparable(value: string): string {
   return normalizeId(value).replaceAll('-', ' ');
+}
+
+function normalizeCode(value: string | undefined): string {
+  return (value ?? '').trim().toUpperCase();
 }
 
 function errorMessage(error: unknown): string {

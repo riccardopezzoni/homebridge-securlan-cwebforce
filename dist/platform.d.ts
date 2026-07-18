@@ -10,6 +10,7 @@ export declare class SecurlanPlatform implements DynamicPlatformPlugin {
     private readonly cachedMatterAccessories;
     private readonly sensorStatesById;
     private readonly sensorStatesByName;
+    private readonly sensorStatesByCode;
     private readonly lockResetTimers;
     private readonly client?;
     private readonly pollIntervalSeconds;

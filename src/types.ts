@@ -12,6 +12,7 @@ export interface AlarmModeConfig {
 
 export interface SecurlanOutputConfig {
   name?: string;
+  code?: string;
   displayName?: string;
   id?: string;
   idIndex?: number;
@@ -19,13 +20,15 @@ export interface SecurlanOutputConfig {
   exposeAs?: OutputMode;
   enabled?: boolean;
   linkedSensorName?: string;
+  linkedSensorCode?: string;
   linkedSensorId?: string;
   sensorOpenState?: string;
   sensorClosedState?: string;
 }
 
 export interface SensorOverrideConfig {
-  name: string;
+  name?: string;
+  code?: string;
   kind?: SensorKind;
   displayName?: string;
 }
@@ -68,6 +71,7 @@ export interface SecurlanPlatformConfig extends PlatformConfig {
 }
 
 export interface SecurlanSensorState {
+  code?: string;
   name: string;
   rawState: string;
 }
@@ -75,6 +79,7 @@ export interface SecurlanSensorState {
 export interface SecurlanOutputState {
   id: string;
   idIndex: number;
+  code?: string;
   name: string;
 }
 
@@ -96,5 +101,6 @@ export interface AccessoryContext {
   outputMode?: OutputMode;
   linkedSensorId?: string;
   linkedSensorName?: string;
+  linkedSensorCode?: string;
   lastTargetPosition?: number;
 }
